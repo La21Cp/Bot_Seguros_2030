@@ -1,0 +1,141 @@
+
+import os
+from langchain_openai import OpenAIEmbeddings
+from langchain.chat_models import init_chat_model
+
+os.environ["OPENAI_API_KEY"] = "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"
+os.environ["LANGCHAIN_API_KEY"] = "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"
+llm = init_chat_model("gpt-3.5-turbo",model_provider = "openai")
+
+
+
+embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+
+
+from langchain_core.vectorstores import InMemoryVectorStore
+
+vector_store = InMemoryVectorStore(embeddings)
+
+from langchain_community.document_loaders import PyMuPDFLoader
+
+
+# Ruta del PDF en tu PC
+pdf_path = "1210-Insurance-2030.pdf"  # Reemplaza con la ruta real
+
+# Cargar contenido del PDF
+loader = PyMuPDFLoader(pdf_path)
+docs = loader.load()
+
+# Unir todo el texto en un solo string
+full_text = "\n\n".join([doc.page_content for doc in docs])
+
+# Crear un único documento
+from langchain_core.documents import Document  
+docs = [Document(page_content=full_text)]
+
+print(f"Cantidad de documentos cargados: {len(docs)}")
+
+print(f"Número de documentos: {len(docs)}")
+#print(f"Contenido del documento:\n{docs[0].page_content[:500]}...")  # Mostrar primeras 500 caracteres
+
+print(f"Total characters: {len(docs[0].page_content)}")
+#assert len(docs) == 1
+#print(f"Total characters: {len(docs[0].page_content)}")
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,  # chunk size (characters)
+    chunk_overlap=200,  # chunk overlap (characters)
+    add_start_index=True,  # track index in original document
+)
+all_splits = text_splitter.split_documents(docs)
+
+print(f"Split blog post into {len(all_splits)} sub-documents.")
+
+document_ids = vector_store.add_documents(documents=all_splits)
+
+print(document_ids[:3])
+#Prompt de contexto
+from langchain_core.prompts import PromptTemplate
+
+custom_prompt = PromptTemplate.from_template(
+    """
+    Eres un asistente experto en análisis de documentos. 
+    Tienes acceso a un conjunto de documentos que contienen información detallada sobre un tema.
+    Usa TODA la información relevante en el contexto para responder de la forma más precisa posible.
+
+    Pregunta del usuario: {question}
+
+    Contexto relevante del documento:
+    {context}
+
+    Responde de manera concisa y basada en el contexto proporcionado.
+    Si no puedes encontrar información en el contexto, responde "No hay suficiente información en el documento para responder con precisión".
+    """
+)
+
+
+##
+#from langchain import hub
+#prompt = hub.pull("rlm/rag-prompt")
+##
+
+example_messages = custom_prompt.invoke(
+    {"context": "(context goes here)", "question": "(question goes here)"}
+).to_messages()
+
+assert len(example_messages) == 1
+print(example_messages[0].content)
+
+from langchain_core.documents import Document
+from typing_extensions import List, TypedDict
+
+
+class State(TypedDict):
+    question: str
+    context: List[Document]
+    answer: str
+    
+def retrieve(state: State):
+    retrieved_docs = vector_store.similarity_search(state["question"])
+    return {"context": retrieved_docs}
+
+
+def generate(state: State):
+    docs_content = "\n\n".join(doc.page_content for doc in state["context"])
+    messages = custom_prompt.invoke({"question": state["question"], "context": docs_content})
+    response = llm.invoke(messages)
+    return {"answer": response.content}
+
+from langgraph.graph import START, StateGraph
+import streamlit as st
+
+graph_builder = StateGraph(State).add_sequence([retrieve, generate])
+graph_builder.add_edge(START, "retrieve")
+graph = graph_builder.compile()
+
+
+##Imagen de respuesta
+#from IPython.display import Image, display
+#display(Image(graph.get_graph().draw_mermaid_png()))
+
+##Front de pregunta
+st.title("🤖 Rag Experto en articulo 1210-Insurance-2030 💵")
+
+# Crear una caja de entrada de texto
+question = st.text_input("Escribe tu pregunta aquí:")
+
+#boton para ejecutar
+if st.button("Preguntar"):
+    if question:
+        with st.spinner("buscando respuesta..."):
+            result = graph.invoke({"question": question})
+            st.write("#### Respuesta:")
+            st.write(result["answer"])
+    else:
+        st.warning("Por favor, ingresa una pregunta")
+
+#result = graph.invoke({"question": "que se espera en el 2030?"})
+
+#print(f'Context: {result["context"]}\n\n')
+#print(f'Answer: {result["answer"]}')
