@@ -5,5 +5,5 @@ langchain_community
 langchain_core
 langchain_text_splitters
 openai
-chromadb
-pymupdf
+langgraph
+PyMuPDF
