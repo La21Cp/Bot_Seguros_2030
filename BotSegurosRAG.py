@@ -70,7 +70,9 @@ custom_prompt = PromptTemplate.from_template(
     Contexto relevante del documento:
     {context}
 
-    Responde de manera concisa y basada en el contexto proporcionado, ten en cuenta que es una vista a futuro, ya que el documento habla de que pasara en 2030.
+    Responde de manera concisa y basada en el contexto proporcionado,
+    puedes complementar con informacion que encuentres solo si ya encontraste información previamente en el documento,
+    no solo una palabra, la pregunta completa del usuario debe estar asociada a la información del documento
     Si no puedes encontrar información en el contexto, responde "No hay suficiente información en el documento para responder con precisión".
     """
 )
@@ -121,7 +123,7 @@ graph = graph_builder.compile()
 #display(Image(graph.get_graph().draw_mermaid_png()))
 
 ##Front de pregunta
-st.title("🤖 Rag Experto en articulo 1210-Insurance-2030 💵")
+st.title("🤖 Rag Experto en el futuro de la tecnologia en los seguros 💵")
 
 # Crear una caja de entrada de texto
 question = st.text_input("Escribe tu pregunta aquí:")
