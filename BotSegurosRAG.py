@@ -21,7 +21,7 @@ from langchain_community.document_loaders import PyMuPDFLoader
 
 
 # Ruta del PDF en tu PC
-pdf_path = "1210-Insurance-2030.pdf"  # Reemplaza con la ruta real
+pdf_path = "Preguntas_Respuestas.pdf"  # Reemplaza con la ruta real
 
 # Cargar contenido del PDF
 loader = PyMuPDFLoader(pdf_path)
@@ -61,17 +61,21 @@ from langchain_core.prompts import PromptTemplate
 
 custom_prompt = PromptTemplate.from_template(
     """
-    Eres un asistente experto en análisis de documentos. 
+    Eres un asistente experto en análisis de documentos.
+    Tienes Acceso a un documento en ingles, que contiene informacion de unas preguntas, y debajo de cada una de estas
+    su respectiva respuesta usa esta informacion para el contexto de la respuesta 
     Tienes acceso a un conjunto de documentos que contienen información detallada sobre un tema.
     Usa TODA la información relevante en el contexto para responder de la forma más precisa posible.
+    la respuesta debe ser la que tiene la pregunta en el documento y en ingles como esta el documento
 
     Pregunta del usuario: {question}
 
     Contexto relevante del documento:
     {context}
-
-    Responde de manera concisa y basada en el contexto proporcionado, ten en cuenta que es una vista a futuro, ya que el documento habla de que pasara en 2030.
-    Si no puedes encontrar información en el contexto, responde "No hay suficiente información en el documento para responder con precisión".
+    
+    Responde basado solamente en el documento, si la pregunta esta, debes dar la respuesta asociada debajo, si tiene mas de una pues responde 
+    con ambas, ademas de eso si no esta la pregunta en el documento, debes informarme y darme la respuesta que tu creerias posible pero siempre
+    informandome que esa pregunta no estaba en el documento
     """
 )
 
@@ -121,7 +125,7 @@ graph = graph_builder.compile()
 #display(Image(graph.get_graph().draw_mermaid_png()))
 
 ##Front de pregunta
-st.title("🤖 Agente Experto en el futuro de la tecnologia en los seguros 💵")
+st.title("🤖 Agente Experto en Automation360 💵")
 
 # Crear una caja de entrada de texto
 question = st.text_input("Escribe tu pregunta aquí:")
